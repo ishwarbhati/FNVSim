@@ -23,12 +23,19 @@ Controller::Controller(NVDIMM* parent){
 	savefile << "CHANNEL_TIME: " << CHANNEL_TIME << endl; 
 	TOTAL_RD_LAT = CHANNEL_TIME + READ_TIME;
 	TOTAL_WR_LAT = CHANNEL_TIME + WRITE_TIME;
+        //Cache Line is assumed 64B
+	CRIT_LINE_TIME = READ_TIME +  (divide_params((uint)512,DEVICE_WIDTH) * DEVICE_CYCLE) / CYCLE_TIME;
 	addressMap = std::unordered_map<uint64_t, bool>();
 	loaded = false;
 
 
 }
 
+void Controller::returnCritLine(const FlashTransaction &trans){
+        if(parentNVDIMM->CriticalLineDone!=NULL){
+            (*parentNVDIMM->CriticalLineDone)(parentNVDIMM->systemID,trans.address, currentClockCycle, true);
+        }
+}
 
 void Controller::returnReadData(const FlashTransaction  &trans){
 	if(parentNVDIMM->ReturnReadData!=NULL){
@@ -143,6 +150,17 @@ void Controller::update(void){
 	    if(LOGGING == true)
 	    {
 		savefile << "READ Completed, Address: "<< trans.address << " Cycle No: " << currentClockCycle << endl;
+	    }
+	}
+	else if (CRIT_LINE_FIRST && (*rd_it).second == CRIT_LINE_TIME) {
+	    trans.address = ((*rd_it).first).address;
+	    trans.transactionType = ((*rd_it).first).transactionType;
+	    returnCritLine(trans);
+	    (*rd_it).second++;
+	    rd_it++;
+	    if(LOGGING == true)
+	    {
+		savefile << "Critical Cache Line Finished, Address: "<< trans.address << " Cycle No: " << currentClockCycle << endl;
 	    }
 	}
 	else {

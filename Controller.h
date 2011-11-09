@@ -30,6 +30,7 @@ namespace NVDSim{
 		//	void attachPackages(vector<Package> *packages);
 			void returnReadData(const FlashTransaction &trans);
 			void returnUnmappedData(const FlashTransaction &trans);
+			void returnCritLine(const FlashTransaction &trans);
 			void returnPowerData(vector<double> idle_energy,
 					 vector<double> access_energy,
 					 vector<double> erase_energy,
@@ -63,6 +64,7 @@ namespace NVDSim{
 			std::unordered_map<uint64_t,bool> addressMap;
 			std::ofstream savefile;
 			uint64_t CHANNEL_TIME;
+			uint64_t CRIT_LINE_TIME;
 			uint64_t TOTAL_RD_LAT;
 			uint64_t TOTAL_WR_LAT;
 			bool loaded;
